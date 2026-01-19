@@ -1,42 +1,40 @@
-- name: Install docker
-  apt:
-    name:
-      - docker.io
-      - docker-compose
-    state: present
-    update_cache: yes  # Обновить кэш пакетов
+---
+- hosts: localhost
+  become: true
 
-- name: Enable docker
-  systemd:
-    name: docker
-    enabled: true
-    state: started
+  tasks:
+    - name: Install Docker
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+        state: present
+        update_cache: yes
 
-- name: Add user to docker group
-  user:
-    name: "{{ ansible_user }}"
-    groups: docker
-    append: yes
+    - name: Start Docker service
+      systemd:
+        name: docker
+        enabled: true
+        state: started
 
-- name: Pull nginx from DockerHub
-  docker_image:
-    name: nginx
-    tag: alpine  # Или latest, stable, 1.25
-    source: pull
-    state: present
+    - name: Create web directory
+      file:
+        path: /var/www/html
+        state: directory
+        mode: '0755'
 
-- name: Run nginx container
-  docker_container:
-    name: nginx-web
-    image: nginx:alpine
-    state: started
-    restart_policy: unless-stopped
-    ports:
-      - "80:80"      # HTTP
-      - "443:443"    # HTTPS (опционально)
-    volumes:
-      - "/var/www/html:/usr/share/nginx/html:ro"
-      - "/etc/nginx/conf.d:/etc/nginx/conf.d:ro"
-    env:
-      NGINX_HOST: "localhost"
-      NGINX_PORT: "80"
+    - name: Create index.html
+      copy:
+        dest: /var/www/html/index.html
+        content: "<h1>✅ Working</h1>"
+        mode: '0644'
+
+    - name: Pull and run nginx
+      docker_container:
+        name: nginx-web
+        image: nginx:alpine
+        state: started
+        ports:
+          - "80:80"
+        volumes:
+          - "/var/www/html/index.html:/usr/share/nginx/html/index.html:ro"
