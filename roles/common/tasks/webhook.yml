@@ -1,0 +1,11 @@
+---
+- name: Send success notification to webhook
+  uri:
+    url: "https://webhook.site/cfab3785-0e98-4706-8ba7-39d673159b7d"
+    method: POST
+    body_format: json
+    body:
+      hostname: "{{ ansible_hostname }}"
+      status: "success"
+      ip: "{{ ansible_default_ipv4.address }}"
+      timestamp: "{{ ansible_date_time.iso8601 }}"
